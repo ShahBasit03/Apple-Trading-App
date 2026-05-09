@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Grower Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-green-800 text-white p-4 mb-8 shadow-md">
+        <div class="max-w-6xl mx-auto flex justify-between">
+            <h1 class="font-bold">Kashmir Apple Exchange</h1>
+            <a href="/trader/dashboard" class="hover:underline text-sm">Switch to Trader View</a>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="p-4 mb-4 rounded bg-green-500 text-white font-bold">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <h2 class="text-2xl font-bold mb-6">Grower Dashboard: My Lots</h2>
+
+        <div class="bg-white rounded-lg shadow overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="p-4 border">Variety</th>
+                        <th class="p-4 border">Boxes</th>
+                        <th class="p-4 border">Status</th>
+                        <th class="p-4 border">All Bids (Highest First)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lot in lots %}
+                    <tr class="border-b">
+                        <td class="p-4 border"><strong>{{ lot.variety }}</strong><br><span class="text-xs text-gray-500">Grade: {{ lot.grade }}</span></td>
+                        <td class="p-4 border">{{ lot.box_count }}</td>
+                        <td class="p-4 border">
+                            <span class="p-1 px-2 rounded text-xs font-bold {{ 'bg-red-500 text-white' if lot.status == 'Locked' else 'bg-orange-400 text-white' if lot.status == 'Bidded' else 'bg-green-500 text-white' }}">
+                                {{ lot.status }}
+                            </span>
+                        </td>
+                        <td class="p-4 border">
+                            {% if lot.bids %}
+                                <div class="space-y-2">
+                                    {% for b in lot.bids|sort(attribute='amount', reverse=True) %}
+                                        <div class="flex justify-between items-center p-2 rounded border {{ 'bg-blue-50 border-blue-500' if b.id == lot.locked_bid_id else 'bg-gray-50' }}">
+                                            <div>
+                                                <span class="font-bold text-green-700">₹{{ b.amount }}</span>
+                                                <span class="text-sm text-gray-600 ml-2">by {{ b.bidder_name }}</span>
+                                                {% if b.id == lot.locked_bid_id %}
+                                                    <p class="text-xs font-bold text-blue-700 mt-1 uppercase">Call: {{ b.trader_phone }}</p>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            {% if lot.status != 'Locked' %}
+                                            <form action="/lock-bid/{{ b.id }}" method="POST">
+                                                <button type="submit" class="bg-red-600 text-white text-xs px-2 py-1 rounded hover:bg-red-700">Lock Deal</button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-gray-400 italic">No bids yet</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

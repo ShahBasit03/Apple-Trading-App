@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trader Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-green-800 text-white p-4 shadow-md mb-8">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-xl">Kashmir Apple Exchange</h1>
+            <div class="space-x-6">
+                <a href="/" class="hover:underline">Post Lot</a>
+                <a href="/grower/dashboard" class="hover:underline">Check Bids</a>
+                <a href="/trader/dashboard" class="hover:underline text-yellow-300">Trader Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages (Error/Success) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="max-w-4xl mx-auto p-4 mb-4 text-white text-center font-bold rounded-lg {{ 'bg-red-500' if category == 'danger' else 'bg-green-500' }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="max-w-4xl mx-auto px-4 pb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <h2 class="text-3xl font-bold text-gray-800">Available Apple Lots</h2>
+            <form action="{{ url_for('trader_dashboard') }}" method="GET" class="flex gap-2">
+                <select name="variety" class="rounded border border-gray-300 p-2 text-sm">
+                    <option value="All" {% if selected_variety == 'All' %}selected{% endif %}>All varieties</option>
+                    {% for variety in varieties %}
+                        <option value="{{ variety }}" {% if selected_variety == variety %}selected{% endif %}>{{ variety }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-green-700 text-white px-4 py-2 rounded text-sm">Filter</button>
+            </form>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for lot in lots %}
+            <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 {{ 'border-red-600' if lot.status == 'Locked' else 'border-green-600' }}">
+                <div class="flex justify-between items-start">
+                    <h3 class="text-xl font-bold text-gray-800">{{ lot.variety }}</h3>
+                    <span class="text-xs font-bold px-2 py-1 rounded {{ 'bg-red-100 text-red-700' if lot.status == 'Locked' else 'bg-green-100 text-green-700' }}">
+                        {{ lot.status }}
+                    </span>
+                </div>
+                <p class="text-sm text-gray-500">Grade: {{ lot.grade }} | Boxes: {{ lot.box_count }}</p>
+                <p class="text-lg font-bold text-green-700 mt-2 border-b pb-2">Min Price: ₹{{ lot.min_price }}</p>
+
+                <!-- BID HISTORY SECTION -->
+                <!-- Replace your current 'Bid History' section with this -->
+<div class="mt-4">
+    <p class="text-xs font-bold uppercase text-gray-400">All Bids (Highest at Top)</p>
+    <div class="max-h-48 overflow-y-auto mt-2 space-y-2">
+        {% if lot.bids %}
+            <!-- We sort by amount (reverse=True) so highest is first -->
+            {% for b in lot.bids|sort(attribute='amount', reverse=True) %}
+            <div class="flex justify-between p-2 rounded border {{ 'bg-green-100 border-green-500 font-bold' if loop.first else 'bg-gray-50' }}">
+                <span>{{ b.bidder_name }}</span>
+                <span>₹{{ b.amount }} {% if loop.first %}(Highest){% endif %}</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-sm text-gray-400 italic">No bids yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+                <!-- CONDITIONAL SECTION: LOCKED DEAL VS BID FORM -->
+                {% if lot.status == 'Locked' %}
+                    <!-- SHOW CONTACT DETAILS IF LOCKED -->
+                    <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+                        <h4 class="text-red-700 font-bold uppercase text-sm mb-2">Deal Finalized & Locked</h4>
+                        <div class="bg-white p-3 rounded shadow-sm border border-red-100">
+                            <p class="text-xs text-gray-500 uppercase font-bold">Contact Grower Directly:</p>
+                            <p class="text-xl font-bold text-gray-800">{{ lot.grower_name }}</p>
+                            <p class="text-blue-600 font-bold text-lg underline select-all">{{ lot.grower_phone }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- BID FORM (Only shows if lot is not locked) -->
+                    <form action="/bid/{{ lot.id }}" method="POST" class="mt-6 border-t pt-4 space-y-2">
+                        <input type="text" name="trader_name" placeholder="Your Full Name" required 
+                               class="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                        
+                        <input type="tel" name="trader_phone" placeholder="Your Phone Number" required 
+                               class="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                        
+                        <div class="flex gap-2">
+                            <input type="number" name="bid_amount" placeholder="Bid Amount ₹" required 
+                                   class="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                            <button type="submit" class="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded font-bold transition">
+                                Bid
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
